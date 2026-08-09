@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GERAI.PO — Pre-order tinggal chat</title>
+<meta name="description" content="Pilih produk, atur jumlah, checkout langsung lewat WhatsApp.">
+<style>
+:root{
+  --bg:#1E1812; --surface:#2A2119; --surface-2:#362B20;
+  --line:rgba(243,236,221,.14); --line-strong:rgba(243,236,221,.24);
+  --gold:#F2A93B; --gold-dim:#C98A2C; --red:#E4512B;
+  --cream:#F3ECDD; --muted:#B8AD9C; --wa:#25D366;
+  --radius:16px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--cream);font-family:Arial,sans-serif;line-height:1.5}
+button,input,textarea{font:inherit}
+button{cursor:pointer}
+.wrap{max-width:1120px;margin:auto;padding:0 20px}
+
+.site-header{position:sticky;top:0;z-index:30;background:rgba(30,24,18,.94);backdrop-filter:blur(8px);border-bottom:1px dashed var(--line-strong)}
+.site-header .wrap{display:flex;align-items:center;justify-content:space-between;padding-top:14px;padding-bottom:14px}
+.brand{display:flex;flex-direction:column}
+.brand-name{font-size:26px;font-weight:900;letter-spacing:.04em;color:var(--gold)}
+.brand-tag{font-size:12px;color:var(--muted)}
+.cart-icon-btn{position:relative;width:46px;height:46px;border-radius:50%;border:1px solid var(--line-strong);background:var(--surface);color:var(--cream)}
+.cart-icon-btn:hover{border-color:var(--gold)}
+.cart-badge{position:absolute;top:-4px;right:-4px;min-width:19px;height:19px;border-radius:50%;background:var(--red);font-size:11px;font-weight:bold;display:flex;align-items:center;justify-content:center}
+.cart-badge[hidden]{display:none}
+
+.hero{text-align:center;padding:44px 0 30px}
+.stamp{width:92px;height:92px;margin:0 auto 20px;border:2px dashed var(--gold-dim);border-radius:50%;color:var(--gold);display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:bold;transform:rotate(-8deg)}
+.stamp span:first-child{font-size:18px}
+.eyebrow{color:var(--muted);font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px}
+.hero h1{font-size:clamp(34px,6vw,54px);line-height:1.05;margin:0;text-transform:uppercase}
+.hero h1 em{font-style:normal;color:var(--gold)}
+.hero p.sub{max-width:520px;margin:16px auto 0;color:var(--muted)}
+.steps{margin:32px auto 0;max-width:720px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px;text-align:left}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px}
+.step .num{color:var(--gold);font-size:12px;font-weight:bold}
+.step .label{display:block;margin-top:6px;font-size:14px}
+
+.products-section{padding:44px 0 90px}
+.section-heading{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:20px;gap:12px}
+.section-heading h2{font-size:28px;margin:0;text-transform:uppercase}
+.section-heading p{color:var(--muted);font-size:14px;margin:0}
+.product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:18px}
+.product-card{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;transition:.15s}
+.product-card.in-cart{border-color:var(--gold)}
+.tag{position:absolute;top:12px;left:12px;z-index:2;font-size:11px;font-weight:bold;padding:4px 9px;border-radius:999px;background:var(--bg);color:var(--gold);border:1px solid var(--gold-dim)}
+.tag-terlaris{color:var(--red);border-color:var(--red)}
+.product-media{aspect-ratio:1;background:var(--surface-2);display:flex;align-items:center;justify-content:center;color:var(--gold-dim)}
+.product-media svg{width:38%;height:38%}
+.product-media img{width:100%;height:100%;object-fit:cover}
+.product-body{padding:16px;display:flex;flex-direction:column;gap:8px;flex:1}
+.product-body h3{font-size:16px;margin:0}
+.desc{margin:0;color:var(--muted);font-size:13px;min-height:39px}
+.price{font-weight:bold;color:var(--gold);font-size:16px;margin-top:auto}
+.stepper{display:flex;align-items:center;justify-content:space-between;background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:6px 8px;margin-top:4px}
+.step-btn{width:30px;height:30px;border:0;border-radius:50%;background:var(--surface-2);color:var(--cream);font-size:18px}
+.step-btn:hover{background:var(--gold);color:var(--bg)}
+.step-btn.plus{background:var(--gold);color:var(--bg);font-weight:bold}
+.qty{font-weight:bold;min-width:22px;text-align:center}
+
+.cart-bar{position:fixed;left:50%;bottom:20px;transform:translate(-50%,140%);z-index:25;display:flex;align-items:center;gap:14px;background:var(--gold);color:var(--bg);border:0;border-radius:999px;padding:12px 10px 12px 20px;box-shadow:0 12px 28px rgba(0,0,0,.35);font-weight:bold;transition:.25s;max-width:calc(100% - 32px)}
+.cart-bar.show{transform:translate(-50%,0)}
+.cb-total{font-weight:bold}
+.cb-go{background:var(--bg);color:var(--cream);border-radius:999px;padding:9px 16px}
+
+.overlay{position:fixed;inset:0;background:rgba(10,8,6,.6);opacity:0;pointer-events:none;transition:.2s;z-index:40}
+.overlay.open{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;height:100%;width:min(420px,100%);background:var(--bg);border-left:1px dashed var(--line-strong);z-index:41;transform:translateX(100%);transition:.28s;display:flex;flex-direction:column}
+.drawer.open{transform:translateX(0)}
+.drawer-header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px dashed var(--line-strong)}
+.drawer-header h2{margin:0;font-size:20px;text-transform:uppercase}
+.drawer-close{width:34px;height:34px;border-radius:50%;border:1px solid var(--line-strong);background:transparent;color:var(--cream);font-size:20px}
+.drawer-body{flex:1;overflow-y:auto;padding:18px 20px}
+.drawer-footer{padding:16px 20px 20px;border-top:1px dashed var(--line-strong)}
+.empty-cart{text-align:center;color:var(--muted);padding:40px 10px}
+.cart-line{display:flex;align-items:center;gap:8px;padding:10px 0}
+.cl-name{font-size:13px;max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cl-leader{flex:1;border-bottom:1px dotted var(--muted)}
+.cl-price{font-size:13px;white-space:nowrap}
+.cl-stepper{display:flex;align-items:center;gap:5px}
+.cl-stepper .step-btn{width:24px;height:24px;font-size:14px}
+.cl-stepper .qty{font-size:12px;min-width:16px}
+.cart-total-row{display:flex;justify-content:space-between;padding-top:14px;border-top:1px dashed var(--line-strong);font-weight:bold;color:var(--gold)}
+.btn{width:100%;border:0;border-radius:999px;padding:14px 18px;font-weight:bold;text-align:center;margin-top:14px}
+.btn-gold{background:var(--gold);color:var(--bg)}
+.btn-gold:disabled{opacity:.4;cursor:not-allowed}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--line-strong)}
+.btn-wa{background:var(--wa);color:#092014}
+.checkout-summary{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:18px}
+.cs-row,.cs-total{display:flex;justify-content:space-between;gap:12px;padding:4px 0;font-size:13px}
+.cs-row{color:var(--muted)}
+.cs-total{border-top:1px dashed var(--line-strong);margin-top:7px;padding-top:9px;color:var(--gold);font-weight:bold}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:13px;font-weight:bold;margin-bottom:6px}
+.field input[type=text],.field textarea{width:100%;background:var(--surface);border:1px solid var(--line-strong);border-radius:10px;padding:11px 13px;color:var(--cream);resize:vertical}
+.pay-options{display:flex;flex-wrap:wrap;gap:8px}
+.pay-pill{position:relative}
+.pay-pill input{position:absolute;opacity:0}
+.pay-pill span{display:block;padding:9px 14px;border-radius:999px;border:1px solid var(--line-strong);font-size:13px;color:var(--muted)}
+.pay-pill input:checked+span{background:var(--gold);border-color:var(--gold);color:var(--bg);font-weight:bold}
+.form-error{display:none;color:var(--red);font-size:13px;font-weight:bold}
+.form-error.show{display:block}
+footer{border-top:1px dashed var(--line-strong);padding:28px 0 40px;text-align:center;color:var(--muted);font-size:12px}
+
+@media(max-width:640px){
+  .steps{grid-template-columns:1fr}
+  .cart-bar{left:16px;right:16px;transform:translateY(140%);width:auto}
+  .cart-bar.show{transform:translateY(0)}
+  .section-heading{display:block}
+  .section-heading p{margin-top:5px}
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <div class="brand">
+      <span class="brand-name">GERAI.PO</span>
+      <span class="brand-tag">Pre-order tinggal chat</span>
+    </div>
+    <button class="cart-icon-btn" id="openCartBtn" aria-label="Buka keranjang">
+      🛒
+      <span class="cart-badge" id="cartBadge" hidden>0</span>
+    </button>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <div class="stamp"><span>PO</span><span>OPEN</span></div>
+    <div class="eyebrow">Batch pre-order dibuka</div>
+    <h1>Pilih Barang, Atur Jumlah,<br><em>Langsung Chat.</em></h1>
+    <p class="sub">Nggak perlu daftar akun atau isi form ribet. Pilih produk, keranjang otomatis kehitung, checkout langsung nyambung ke WhatsApp kami.</p>
+    <div class="steps">
+      <div class="step"><span class="num">01</span><span class="label">Pilih produk & atur jumlah</span></div>
+      <div class="step"><span class="num">02</span><span class="label">Cek keranjang, isi nama & catatan</span></div>
+      <div class="step"><span class="num">03</span><span class="label">Checkout → langsung ke WhatsApp</span></div>
+    </div>
+  </div>
+</section>
+
+<main class="products-section">
+  <div class="wrap">
+    <div class="section-heading">
+      <h2>Produk Tersedia</h2>
+      <p>Stok mengikuti batch pre-order yang sedang berjalan.</p>
+    </div>
+    <div class="product-grid" id="productGrid"></div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">GERAI.PO — pesanan diproses manual lewat WhatsApp.</div>
+</footer>
+
+<button class="cart-bar" id="cartBar" type="button">
+  <span><span id="cbCount">0</span> item · <span class="cb-total" id="cbTotal">Rp0</span></span>
+  <span class="cb-go">Lihat Keranjang →</span>
+</button>
+
+<div class="overlay" id="overlay"></div>
+
+<aside class="drawer" id="drawer">
+  <div id="cartView">
+    <div class="drawer-header">
+      <h2>Keranjang</h2>
+      <button class="drawer-close" id="closeDrawerBtn" type="button">×</button>
+    </div>
+    <div class="drawer-body" id="cartItemsWrap"></div>
+    <div class="drawer-footer">
+      <div class="cart-total-row"><span>Total</span><span id="cartViewTotal">Rp0</span></div>
+      <button class="btn btn-gold" id="toCheckoutBtn" type="button" disabled>Lanjut ke Checkout →</button>
+    </div>
+  </div>
+
+  <div id="checkoutView" style="display:none">
+    <div class="drawer-header">
+      <h2>Checkout</h2>
+      <button class="drawer-close" id="closeDrawerBtn2" type="button">×</button>
+    </div>
+    <form class="drawer-body" id="checkoutForm">
+      <div class="checkout-summary" id="checkoutSummary"></div>
+
+      <div class="field">
+        <label for="nameInput">Nama Pemesan</label>
+        <input type="text" id="nameInput" placeholder="Nama kamu" autocomplete="name">
+      </div>
+
+      <div class="field">
+        <label for="notesInput">Catatan (opsional)</label>
+        <textarea id="notesInput" rows="3" placeholder="Contoh: warna, ukuran, alamat kirim, dll"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Metode Pembayaran</label>
+        <div class="pay-options">
+          <label class="pay-pill"><input type="radio" name="payment" value="Transfer Bank"><span>Transfer Bank</span></label>
+          <label class="pay-pill"><input type="radio" name="payment" value="QRIS"><span>QRIS</span></label>
+          <label class="pay-pill"><input type="radio" name="payment" value="COD / Bayar di Tempat"><span>COD</span></label>
+        </div>
+      </div>
+
+      <p class="form-error" id="formError"></p>
+
+      <button type="submit" class="btn btn-wa">💬 Pesan via WhatsApp</button>
+      <button type="button" class="btn btn-ghost" id="backToCartBtn">← Kembali ke keranjang</button>
+    </form>
+  </div>
+</aside>
+
+<script>
+(function () {
+  // GANTI NOMOR INI jika nomor WhatsApp toko berbeda.
+  var WA_NUMBER = "6281919801888";
+
+  var ICONS = {
+    shirt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 3 4 6l1 3h2v11a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V9h2l1-3-4-3-2 2h-4L8 3z"/></svg>',
+    bag: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M6 8h12l1 12H5L6 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>',
+    cap: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 14c0-4.4 3.6-8 8-8s8 3.6 8 8"/><path d="M4 14h16"/></svg>',
+    socks: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M9 2h6v9l4 6a3 3 0 0 1-3 5H10a3 3 0 0 1-3-3v-6"/></svg>'
+  };
+
+  var PRODUCTS = [
+    {id:"p1",name:"Frozen Nugget Homemade",price:20000,desc:"Frozen Nugget Homemade Fresh.",icon:"shirt",image:"https://cdn.phototourl.com/free/2026-08-09-c8e427a3-7679-43fa-ac62-09a1e3a9e75d.jpg",tag:"terlaris"},
+    {id:"p2",name:"Popcorn",price:10000,desc:"Popcorn 50 gram, Varian Caramel dan Original.",icon:"shirt",image:"https://cdn.phototourl.com/free/2026-08-09-7ee0f4ab-c795-4365-88c1-6312ed9f1fa0.jpg",tag:null},
+    {id:"p3",name:"---",price:75000,desc:"Kanvas tebal, muat laptop 14 inci.",icon:"bag",image:null,tag:"baru"},
+    {id:"p4",name:"Topi Trucker",price:95000,desc:"Mesh belakang, adjustable snapback.",icon:"cap",image:null,tag:null},
+    {id:"p5",name:"Kemeja Flanel Kotak",price:150000,desc:"Flanel tebal, motif kotak klasik.",icon:"shirt",image:null,tag:null},
+    {id:"p6",name:"Kaos Kaki Motif (isi 3)",price:45000,desc:"3 pasang, motif beda tiap pack.",icon:"socks",image:null,tag:"baru"}
+  ];
+
+  var cart = {};
+
+  function formatRupiah(n) {
+    return "Rp" + Number(n).toLocaleString("id-ID");
+  }
+
+  function findProduct(id) {
+    return PRODUCTS.find(function (p) { return p.id === id; });
+  }
+
+  function cartCount() {
+    return Object.values(cart).reduce(function (sum, qty) { return sum + qty; }, 0);
+  }
+
+  function cartTotal() {
+    return Object.keys(cart).reduce(function (sum, id) {
+      var p = findProduct(id);
+      return sum + (p ? p.price * cart[id] : 0);
+    }, 0);
+  }
+
+  var grid = document.getElementById("productGrid");
+  var cartBar = document.getElementById("cartBar");
+  var cbCount = document.getElementById("cbCount");
+  var cbTotal = document.getElementById("cbTotal");
+  var cartBadge = document.getElementById("cartBadge");
+  var overlay = document.getElementById("overlay");
+  var drawer = document.getElementById("drawer");
+  var cartView = document.getElementById("cartView");
+  var checkoutView = document.getElementById("checkoutView");
+  var cartItemsWrap = document.getElementById("cartItemsWrap");
+  var cartViewTotal = document.getElementById("cartViewTotal");
+  var toCheckoutBtn = document.getElementById("toCheckoutBtn");
+  var checkoutSummary = document.getElementById("checkoutSummary");
+  var checkoutForm = document.getElementById("checkoutForm");
+  var nameInput = document.getElementById("nameInput");
+  var notesInput = document.getElementById("notesInput");
+  var formError = document.getElementById("formError");
+
+  function productMedia(p) {
+    if (p.image) return '<img src="' + p.image + '" alt="' + p.name + '">';
+    return ICONS[p.icon] || ICONS.shirt;
+  }
+
+  function cardTemplate(p) {
+    var qty = cart[p.id] || 0;
+    var tag = p.tag === "terlaris"
+      ? '<span class="tag tag-terlaris">Terlaris</span>'
+      : p.tag === "baru"
+        ? '<span class="tag">Baru</span>'
+        : "";
+
+    return '<div class="product-card ' + (qty ? "in-cart" : "") + '" data-id="' + p.id + '">' +
+      tag +
+      '<div class="product-media">' + productMedia(p) + '</div>' +
+      '<div class="product-body">' +
+      '<h3>' + p.name + '</h3>' +
+      '<p class="desc">' + p.desc + '</p>' +
+      '<div class="price">' + formatRupiah(p.price) + '</div>' +
+      '<div class="stepper">' +
+      '<button type="button" class="step-btn" data-action="dec" data-id="' + p.id + '">−</button>' +
+      '<span class="qty" data-qty-for="' + p.id + '">' + qty + '</span>' +
+      '<button type="button" class="step-btn plus" data-action="inc" data-id="' + p.id + '">+</button>' +
+      '</div></div></div>';
+  }
+
+  function renderProducts() {
+    grid.innerHTML = PRODUCTS.map(cardTemplate).join("");
+  }
+
+  function syncProductCard(id) {
+    var qty = cart[id] || 0;
+    var el = grid.querySelector('[data-qty-for="' + id + '"]');
+    if (el) el.textContent = qty;
+    var card = grid.querySelector('.product-card[data-id="' + id + '"]');
+    if (card) card.classList.toggle("in-cart", qty > 0);
+  }
+
+  function changeQty(id, delta) {
+    var next = Math.max(0, (cart[id] || 0) + delta);
+    if (next === 0) delete cart[id];
+    else cart[id] = next;
+    syncProductCard(id);
+    updateCartBar();
+    renderCartItems();
+  }
+
+  function updateCartBar() {
+    var count = cartCount();
+    cbCount.textContent = count;
+    cbTotal.textContent = formatRupiah(cartTotal());
+    cartBar.classList.toggle("show", count > 0);
+    cartBadge.hidden = count === 0;
+    cartBadge.textContent = count;
+    toCheckoutBtn.disabled = count === 0;
+  }
+
+  function cartLineTemplate(id) {
+    var p = findProduct(id);
+    var qty = cart[id];
+
+    return '<div class="cart-line">' +
+      '<span class="cl-name">' + p.name + '</span>' +
+      '<span class="cl-leader"></span>' +
+      '<span class="cl-price">' + formatRupiah(p.price * qty) + '</span>' +
+      '<span class="cl-stepper">' +
+      '<button type="button" class="step-btn" data-action="dec" data-id="' + id + '">−</button>' +
+      '<span class="qty">' + qty + '</span>' +
+      '<button type="button" class="step-btn plus" data-action="inc" data-id="' + id + '">+</button>' +
+      '</span></div>';
+  }
+
+  function renderCartItems() {
+    var ids = Object.keys(cart);
+    cartItemsWrap.innerHTML = ids.length
+      ? ids.map(cartLineTemplate).join("")
+      : '<div class="empty-cart">Keranjang masih kosong.<br>Yuk pilih produk favoritmu dulu.</div>';
+    cartViewTotal.textContent = formatRupiah(cartTotal());
+  }
+
+  function renderCheckoutSummary() {
+    var rows = Object.keys(cart).map(function (id) {
+      var p = findProduct(id);
+      var qty = cart[id];
+      return '<div class="cs-row"><span>' + p.name + ' ×' + qty + '</span><span>' + formatRupiah(p.price * qty) + '</span></div>';
+    }).join("");
+
+    checkoutSummary.innerHTML = rows +
+      '<div class="cs-total"><span>Total</span><span>' + formatRupiah(cartTotal()) + '</span></div>';
+  }
+
+  function handleStepClick(e) {
+    var btn = e.target.closest("[data-action]");
+    if (!btn) return;
+    changeQty(btn.dataset.id, btn.dataset.action === "inc" ? 1 : -1);
+  }
+
+  grid.addEventListener("click", handleStepClick);
+  cartItemsWrap.addEventListener("click", handleStepClick);
+
+  function openDrawer() {
+    renderCartItems();
+    showCartView();
+    overlay.classList.add("open");
+    drawer.classList.add("open");
+  }
+
+  function closeDrawer() {
+    overlay.classList.remove("open");
+    drawer.classList.remove("open");
+  }
+
+  function showCartView() {
+    cartView.style.display = "";
+    checkoutView.style.display = "none";
+  }
+
+  function showCheckoutView() {
+    if (!cartCount()) return;
+    renderCheckoutSummary();
+    cartView.style.display = "none";
+    checkoutView.style.display = "";
+  }
+
+  document.getElementById("openCartBtn").addEventListener("click", openDrawer);
+  cartBar.addEventListener("click", openDrawer);
+  document.getElementById("closeDrawerBtn").addEventListener("click", closeDrawer);
+  document.getElementById("closeDrawerBtn2").addEventListener("click", closeDrawer);
+  overlay.addEventListener("click", closeDrawer);
+  toCheckoutBtn.addEventListener("click", showCheckoutView);
+  document.getElementById("backToCartBtn").addEventListener("click", showCartView);
+
+  function showError(msg) {
+    formError.textContent = msg;
+    formError.classList.add("show");
+  }
+
+  function clearError() {
+    formError.textContent = "";
+    formError.classList.remove("show");
+  }
+
+  nameInput.addEventListener("input", clearError);
+  notesInput.addEventListener("input", clearError);
+
+  checkoutForm.addEventListener("submit", function (e) {
+    e.preventDefault();
+    clearError();
+
+    if (!cartCount()) {
+      showError("Keranjang masih kosong, pilih produk dulu ya.");
+      return;
+    }
+
+    var nama = nameInput.value.trim();
+    if (!nama) {
+      showError("Isi nama dulu ya, biar gampang dihubungi.");
+      nameInput.focus();
+      return;
+    }
+
+    var paymentEl = checkoutForm.querySelector('input[name="payment"]:checked');
+    if (!paymentEl) {
+      showError("Pilih metode pembayaran dulu ya.");
+      return;
+    }
+
+    var lines = Object.keys(cart).map(function (id, i) {
+      var p = findProduct(id);
+      var qty = cart[id];
+      return (i + 1) + ". " + p.name + " x" + qty + " = " + formatRupiah(p.price * qty);
+    }).join("\n");
+
+    var message =
+      "Halo, saya mau pesan:\n\n" +
+      lines +
+      "\n\nTotal: " + formatRupiah(cartTotal()) +
+      "\n\nNama: " + nama;
+
+    var catatan = notesInput.value.trim();
+    if (catatan) message += "\nCatatan: " + catatan;
+    message += "\nPembayaran: " + paymentEl.value;
+
+    var url = "https://wa.me/" + WA_NUMBER + "?text=" + encodeURIComponent(message);
+    window.location.href = url;
+  });
+
+  renderProducts();
+  renderCartItems();
+  updateCartBar();
+})();
+</script>
+</body>
+</html>
